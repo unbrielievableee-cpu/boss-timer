@@ -1,0 +1,89 @@
+ <script>
+  // ==========================
+  // CONFIG: EDIT THIS SECTION
+  // ==========================
+  // hoursAfterRespawn = respawn interval in hours
+  // deathTime = actual kill time (set this when boss dies)
+  //
+  // EXAMPLE: new Date("2025-11-27T23:15:00")
+  // Format: "YYYY-MM-DDTHH:MM:SS" in YOUR local time.
+
+  const bosses = [
+    {
+      name: "Venatus",
+      hoursAfterRespawn: 10,
+      deathTime: new Date("2025-11-27T12:00:00") // <-- change to real kill time
+    },
+    {
+      name: "Viorent",
+      hoursAfterRespawn: 10,
+      deathTime: new Date("2025-11-27T13:00:00") // <-- change to real kill time
+    },
+    {
+      name: "Ego",
+      hoursAfterRespawn: 21,
+      deathTime: new Date("2025-11-27T14:00:00") // <-- change to real kill time
+    }
+    // Add more bosses here using the same pattern
+  ];
+
+  const tbody = document.getElementById("boss-table-body");
+
+  function createRow(boss, index) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${boss.name}</td>
+      <td>${boss.hoursAfterRespawn}h</td>
+      <td id="death-${index}"></td>
+      <td id="next-${index}"></td>
+      <td id="cd-${index}"></td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  bosses.forEach((boss, i) => createRow(boss, i));
+
+  function formatCountdown(ms) {
+    if (ms <= 0) return "Spawning now";
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${hours}h ${minutes}m ${seconds}s`;
+  }
+
+  function tick() {
+    const now = new Date();
+
+    bosses.forEach((boss, index) => {
+      // Your rule: Next Respawn = Time of death + Hours after respawn
+      const nextRespawn = new Date(
+        boss.deathTime.getTime() + boss.hoursAfterRespawn * 60 * 60 * 1000
+      );
+
+      const diff = nextRespawn - now;
+
+      const deathCell = document.getElementById(`death-${index}`);
+      const nextCell = document.getElementById(`next-${index}`);
+      const cdCell = document.getElementById(`cd-${index}`);
+
+      deathCell.textContent = boss.deathTime.toLocaleString();
+      nextCell.textContent = nextRespawn.toLocaleString();
+      cdCell.textContent = formatCountdown(diff);
+    });
+  }
+
+  tick();
+  setInterval(tick, 1000);
+</script>
+
+<thead>
+  <tr>
+    <th>Boss Name</th>
+    <th>Hours After Respawn</th>
+    <th>Time of Death</th>
+    <th>Next Respawn</th>
+    <th>Countdown</th>
+  </tr>
+</thead>
+<tbody id="boss-table-body"></tbody>
