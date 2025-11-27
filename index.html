@@ -1,89 +1,228 @@
- <script>
-  // ==========================
-  // CONFIG: EDIT THIS SECTION
-  // ==========================
-  // hoursAfterRespawn = respawn interval in hours
-  // deathTime = actual kill time (set this when boss dies)
-  //
-  // EXAMPLE: new Date("2025-11-27T23:15:00")
-  // Format: "YYYY-MM-DDTHH:MM:SS" in YOUR local time.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Boss Respawn Timers</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  const bosses = [
-    {
-      name: "Venatus",
-      hoursAfterRespawn: 10,
-      deathTime: new Date("2025-11-27T12:00:00") // <-- change to real kill time
-    },
-    {
-      name: "Viorent",
-      hoursAfterRespawn: 10,
-      deathTime: new Date("2025-11-27T13:00:00") // <-- change to real kill time
-    },
-    {
-      name: "Ego",
-      hoursAfterRespawn: 21,
-      deathTime: new Date("2025-11-27T14:00:00") // <-- change to real kill time
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-    // Add more bosses here using the same pattern
-  ];
 
-  const tbody = document.getElementById("boss-table-body");
+    body {
+      background: #05060a;
+      color: #f5f5f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 32px 16px;
+    }
 
-  function createRow(boss, index) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${boss.name}</td>
-      <td>${boss.hoursAfterRespawn}h</td>
-      <td id="death-${index}"></td>
-      <td id="next-${index}"></td>
-      <td id="cd-${index}"></td>
-    `;
-    tbody.appendChild(tr);
-  }
+    .page {
+      width: 100%;
+      max-width: 1100px;
+    }
 
-  bosses.forEach((boss, i) => createRow(boss, i));
+    h1 {
+      font-size: 26px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
 
-  function formatCountdown(ms) {
-    if (ms <= 0) return "Spawning now";
-    const totalSeconds = Math.floor(ms / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    return `${hours}h ${minutes}m ${seconds}s`;
-  }
+    .subtitle {
+      font-size: 13px;
+      color: #a1a1aa;
+      margin-bottom: 20px;
+    }
 
-  function tick() {
-    const now = new Date();
+    .card {
+      background: radial-gradient(circle at top left, #1f2937 0, #020617 60%);
+      border-radius: 14px;
+      padding: 18px 18px 10px 18px;
+      box-shadow: 0 20px 35px rgba(0, 0, 0, 0.6);
+      border: 1px solid #27272f;
+    }
 
-    bosses.forEach((boss, index) => {
-      // Your rule: Next Respawn = Time of death + Hours after respawn
-      const nextRespawn = new Date(
-        boss.deathTime.getTime() + boss.hoursAfterRespawn * 60 * 60 * 1000
-      );
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
 
-      const diff = nextRespawn - now;
+    thead {
+      background: rgba(15, 23, 42, 0.9);
+    }
 
-      const deathCell = document.getElementById(`death-${index}`);
-      const nextCell = document.getElementById(`next-${index}`);
-      const cdCell = document.getElementById(`cd-${index}`);
+    th, td {
+      padding: 10px 12px;
+      font-size: 13px;
+      text-align: left;
+      border-bottom: 1px solid rgba(75, 85, 99, 0.5);
+      white-space: nowrap;
+    }
 
-      deathCell.textContent = boss.deathTime.toLocaleString();
-      nextCell.textContent = nextRespawn.toLocaleString();
-      cdCell.textContent = formatCountdown(diff);
-    });
-  }
+    th {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #9ca3af;
+      font-weight: 600;
+    }
 
-  tick();
-  setInterval(tick, 1000);
-</script>
+    tbody tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
 
-<thead>
-  <tr>
-    <th>Boss Name</th>
-    <th>Hours After Respawn</th>
-    <th>Time of Death</th>
-    <th>Next Respawn</th>
-    <th>Countdown</th>
-  </tr>
-</thead>
-<tbody id="boss-table-body"></tbody>
+    tbody tr:hover {
+      background: rgba(55, 65, 81, 0.75);
+    }
+
+    .boss-name {
+      font-weight: 500;
+      color: #e5e7eb;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: rgba(31, 41, 55, 0.9);
+      color: #e5e7eb;
+    }
+
+    .countdown {
+      font-variant-numeric: tabular-nums;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 16px 8px;
+      }
+
+      .card {
+        padding: 12px 10px 6px 10px;
+      }
+
+      th, td {
+        padding: 8px 6px;
+        font-size: 11px;
+      }
+
+      h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Dynamic Respawns</h1>
+    <p class="subtitle">
+      Edit the <code>bosses</code> list in the script to update death times and respawn intervals.
+    </p>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Boss Name</th>
+            <th>Hours After Respawn</th>
+            <th>Time of Death</th>
+            <th>Next Respawn</th>
+            <th>Countdown</th>
+          </tr>
+        </thead>
+        <tbody id="boss-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // ==========================
+    // CONFIG: EDIT THIS SECTION
+    // ==========================
+    // hoursAfterRespawn: respawn interval in hours
+    // deathTime: actual kill time (local time)
+    //
+    // Example format: new Date("2025-11-27T20:15:00")
+
+    const bosses = [
+      {
+        name: "Venatus",
+        hoursAfterRespawn: 10,
+        deathTime: new Date("2025-11-27T12:00:00") // change to real kill time
+      },
+      {
+        name: "Viorent",
+        hoursAfterRespawn: 10,
+        deathTime: new Date("2025-11-27T13:00:00")
+      },
+      {
+        name: "Ego",
+        hoursAfterRespawn: 21,
+        deathTime: new Date("2025-11-27T14:00:00")
+      }
+      // Add more bosses here:
+      // { name: "Boss", hoursAfterRespawn: X, deathTime: new Date("YYYY-MM-DDTHH:MM:SS") },
+    ];
+
+    const tbody = document.getElementById("boss-table-body");
+
+    function createRow(boss, index) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="boss-name">${boss.name}</td>
+        <td><span class="tag">${boss.hoursAfterRespawn}h</span></td>
+        <td id="death-${index}"></td>
+        <td id="next-${index}"></td>
+        <td class="countdown" id="cd-${index}"></td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    bosses.forEach((boss, i) => createRow(boss, i));
+
+    function formatCountdown(ms) {
+      if (ms <= 0) return "Spawning now";
+      const totalSeconds = Math.floor(ms / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return `${hours.toString().padStart(2, "0")}h `
+           + `${minutes.toString().padStart(2, "0")}m `
+           + `${seconds.toString().padStart(2, "0")}s`;
+    }
+
+    function tick() {
+      const now = new Date();
+
+      bosses.forEach((boss, index) => {
+        // Next Respawn = Time of death + Hours after respawn
+        const nextRespawn = new Date(
+          boss.deathTime.getTime() + boss.hoursAfterRespawn * 60 * 60 * 1000
+        );
+
+        const diff = nextRespawn - now;
+
+        const deathCell = document.getElementById(`death-${index}`);
+        const nextCell = document.getElementById(`next-${index}`);
+        const cdCell = document.getElementById(`cd-${index}`);
+
+        deathCell.textContent = boss.deathTime.toLocaleString();
+        nextCell.textContent = nextRespawn.toLocaleString();
+        cdCell.textContent = formatCountdown(diff);
+      });
+    }
+
+    tick();
+    setInterval(tick, 1000);
+  </script>
+</body>
+</html>
