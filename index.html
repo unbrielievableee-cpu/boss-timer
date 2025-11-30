@@ -169,7 +169,7 @@
   <div class="page">
     <h1>Boss Timers</h1>
     <p class="subtitle">
-      Dynamic bosses store death times automatically. Click “Death now” when a boss dies.
+      Dynamic bosses store death times automatically. Click “Death now” when a boss dies. Both sections are sorted by next respawn.
     </p>
 
     <h2>Dynamic Respawns (Kill-Based)</h2>
@@ -226,10 +226,7 @@
       { id: "baronbraudmore", name: "Baron Braudmore", hoursAfterRespawn: 32 }
     ];
 
-    // ======================================
-    // DEFAULT DEATH TIMES YOU PROVIDED
-    // ======================================
-
+    // DEFAULT DEATH TIMES
     const defaultDeathTimes = {
       livera:   "2025-11-30T13:09:00",
       araneo:   "2025-11-30T13:12:00",
@@ -245,10 +242,8 @@
       baronbraudmore: "2025-12-01T05:18:00"
     };
 
-    // load from storage or default
     bosses.forEach(boss => {
       const stored = localStorage.getItem("bossTimer_death_" + boss.id);
-
       if (stored) {
         boss.deathTime = new Date(stored);
       } else if (defaultDeathTimes[boss.id]) {
@@ -310,19 +305,25 @@
 
     function nextWeeklySpawn(slots, now) {
       let best = null;
-
       slots.forEach(slot => {
         const d = new Date(now);
         const delta = (slot.day - d.getDay() + 7) % 7;
         d.setDate(d.getDate() + delta);
         d.setHours(slot.hour, slot.minute, 0, 0);
-
         if (d <= now) d.setDate(d.getDate() + 7);
-
         if (!best || d < best) best = d;
       });
-
       return best;
+    }
+
+    function formatSchedule(slots) {
+      return slots
+        .map(s =>
+          `${dayNames[s.day]} ${s.hour.toString().padStart(2, "0")}:${s.minute
+            .toString()
+            .padStart(2, "0")}`
+        )
+        .join(", ");
     }
 
     function markDeathNow(id) {
@@ -342,84 +343,82 @@
     }
 
     // ======================================
-    // RENDER TABLES
+    // RENDER TARGETS
     // ======================================
 
     const tbody = document.getElementById("boss-table-body");
     const fixedTbody = document.getElementById("fixed-table-body");
 
-    function renderDynamicRow(boss, i) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td data-label="Boss Name" class="boss-name">${boss.name}</td>
-        <td data-label="Respawn Hours"><span class="tag">${boss.hoursAfterRespawn}h</span></td>
-        <td data-label="Time of Death" id="death-${i}"></td>
-        <td data-label="Next Respawn" id="next-${i}"></td>
-        <td data-label="Countdown" class="countdown" id="cd-${i}"></td>
-        <td data-label="Controls" class="controls-cell">
-          <button class="btn" onclick="markDeathNow('${boss.id}')">Death now</button>
-          <button class="btn btn-secondary" onclick="clearDeath('${boss.id}')">Clear</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    }
-
-    function renderFixedRow(boss, i) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td data-label="Boss Name" class="boss-name">${boss.name}</td>
-        <td data-label="Schedule" id="sched-${i}"></td>
-        <td data-label="Next Spawn" id="fnext-${i}"></td>
-        <td data-label="Countdown" class="countdown" id="fcd-${i}"></td>
-      `;
-      fixedTbody.appendChild(tr);
-    }
-
-    bosses.forEach(renderDynamicRow);
-    fixedBosses.forEach(renderFixedRow);
-
     // ======================================
-    // UPDATE LOOP
+    // UPDATE LOOP (dynamic + fixed sorted)
     // ======================================
 
     function tick() {
       const now = new Date();
 
-      bosses.forEach((boss, i) => {
-        const deathCell = document.getElementById(`death-${i}`);
-        const nextCell  = document.getElementById(`next-${i}`);
-        const cdCell    = document.getElementById(`cd-${i}`);
-
-        if (!boss.deathTime) {
-          deathCell.textContent = "Not set";
-          nextCell.textContent = "-";
-          cdCell.textContent = "-";
-          return;
+      // ---- Dynamic bosses: compute, sort, rebuild ----
+      const dynList = bosses.map(boss => {
+        let next = null;
+        if (boss.deathTime) {
+          next = new Date(
+            boss.deathTime.getTime() + boss.hoursAfterRespawn * 3600000
+          );
         }
-
-        const next = new Date(
-          boss.deathTime.getTime() +
-          boss.hoursAfterRespawn * 3600000
-        );
-
-        deathCell.textContent = boss.deathTime.toLocaleString();
-        nextCell.textContent = next.toLocaleString();
-        cdCell.textContent = formatCountdown(next - now);
+        return { boss, nextRespawn: next };
       });
 
-      fixedBosses.forEach((boss, i) => {
-        const sched = document.getElementById(`sched-${i}`);
-        const next  = document.getElementById(`fnext-${i}`);
-        const cd    = document.getElementById(`fcd-${i}`);
+      dynList.sort((a, b) => {
+        if (!a.nextRespawn && !b.nextRespawn) return a.boss.name.localeCompare(b.boss.name);
+        if (!a.nextRespawn) return 1;
+        if (!b.nextRespawn) return -1;
+        return a.nextRespawn - b.nextRespawn;
+      });
 
-        sched.textContent = boss.slots
-          .map(s => `${dayNames[s.day]} ${s.hour.toString().padStart(2,"0")}:${s.minute.toString().padStart(2,"0")}`)
-          .join(", ");
+      tbody.innerHTML = "";
 
+      dynList.forEach(({ boss, nextRespawn }) => {
+        const deathText = boss.deathTime ? boss.deathTime.toLocaleString() : "Not set";
+        const nextText = nextRespawn ? nextRespawn.toLocaleString() : "-";
+        const cdText = nextRespawn ? formatCountdown(nextRespawn - now) : "-";
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td data-label="Boss Name" class="boss-name">${boss.name}</td>
+          <td data-label="Respawn Hours"><span class="tag">${boss.hoursAfterRespawn}h</span></td>
+          <td data-label="Time of Death">${deathText}</td>
+          <td data-label="Next Respawn">${nextText}</td>
+          <td data-label="Countdown" class="countdown">${cdText}</td>
+          <td data-label="Controls" class="controls-cell">
+            <button class="btn" onclick="markDeathNow('${boss.id}')">Death now</button>
+            <button class="btn btn-secondary" onclick="clearDeath('${boss.id}')">Clear</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // ---- Fixed bosses: compute, sort, rebuild ----
+      const fixedList = fixedBosses.map(boss => {
         const nextSpawn = nextWeeklySpawn(boss.slots, now);
+        return { boss, nextSpawn };
+      });
 
-        next.textContent = nextSpawn.toLocaleString();
-        cd.textContent = formatCountdown(nextSpawn - now);
+      fixedList.sort((a, b) => a.nextSpawn - b.nextSpawn);
+
+      fixedTbody.innerHTML = "";
+
+      fixedList.forEach(({ boss, nextSpawn }) => {
+        const schedText = formatSchedule(boss.slots);
+        const nextText = nextSpawn.toLocaleString();
+        const cdText = formatCountdown(nextSpawn - now);
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td data-label="Boss Name" class="boss-name">${boss.name}</td>
+          <td data-label="Schedule">${schedText}</td>
+          <td data-label="Next Spawn">${nextText}</td>
+          <td data-label="Countdown" class="countdown">${cdText}</td>
+        `;
+        fixedTbody.appendChild(tr);
       });
     }
 
