@@ -40,7 +40,34 @@
     .subtitle {
       font-size: 13px;
       color: #a1a1aa;
+      margin-bottom: 10px;
+    }
+
+    .banner {
       margin-bottom: 18px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: radial-gradient(circle at top left, rgba(34,197,94,0.20), rgba(15,23,42,0.95));
+      border: 1px solid rgba(34,197,94,0.35);
+      font-size: 13px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: baseline;
+    }
+
+    .banner-label {
+      font-weight: 600;
+      color: #bbf7d0;
+    }
+
+    .banner-countdown {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .banner-time {
+      color: #e5e7eb;
     }
 
     .card {
@@ -127,6 +154,16 @@
       opacity: 1;
     }
 
+    /* subtle highlight for bosses spawning within 30 minutes */
+    tr.highlight {
+      background: rgba(34, 197, 94, 0.13);
+      box-shadow: inset 2px 0 0 rgba(34, 197, 94, 0.8);
+    }
+
+    tr.highlight:hover {
+      background: rgba(34, 197, 94, 0.20);
+    }
+
     @media (max-width: 650px) {
       table, thead, tbody, th, td, tr {
         display: block;
@@ -162,6 +199,10 @@
         gap: 6px;
         align-items: flex-start;
       }
+
+      .banner {
+        border-radius: 12px;
+      }
     }
   </style>
 </head>
@@ -171,6 +212,10 @@
     <p class="subtitle">
       Dynamic bosses store death times automatically. Click “Death now” when a boss dies. Both sections are sorted by next respawn.
     </p>
+
+    <div id="next-banner" class="banner">
+      <span>No upcoming spawns detected.</span>
+    </div>
 
     <h2>Dynamic Respawns (Kill-Based)</h2>
     <div class="card">
@@ -182,6 +227,7 @@
             <th>Time of Death</th>
             <th>Next Respawn</th>
             <th>Countdown</th>
+            <th>Head to Boss Area</th>
             <th>Controls</th>
           </tr>
         </thead>
@@ -348,13 +394,19 @@
 
     const tbody = document.getElementById("boss-table-body");
     const fixedTbody = document.getElementById("fixed-table-body");
+    const bannerEl = document.getElementById("next-banner");
 
     // ======================================
-    // UPDATE LOOP (dynamic + fixed sorted)
+    // UPDATE LOOP (dynamic + fixed sorted + banner + highlight)
     // ======================================
 
     function tick() {
       const now = new Date();
+      const THIRTY_MIN = 30 * 60 * 1000;
+
+      // Track global next spawn (for banner)
+      let globalNext = null;
+      let globalBossName = null;
 
       // ---- Dynamic bosses: compute, sort, rebuild ----
       const dynList = bosses.map(boss => {
@@ -379,15 +431,46 @@
       dynList.forEach(({ boss, nextRespawn }) => {
         const deathText = boss.deathTime ? boss.deathTime.toLocaleString() : "Not set";
         const nextText = nextRespawn ? nextRespawn.toLocaleString() : "-";
-        const cdText = nextRespawn ? formatCountdown(nextRespawn - now) : "-";
+        const spawnDiff = nextRespawn ? nextRespawn - now : null;
+
+        const cdText = nextRespawn ? formatCountdown(spawnDiff) : "-";
+
+        // Head-to-area timer: 5 minutes before spawn
+        let headText = "-";
+        if (nextRespawn) {
+          const headDiff = spawnDiff - 5 * 60 * 1000; // minus 5 minutes
+          if (spawnDiff <= 0) {
+            headText = "-"; // spawn due/past
+          } else if (headDiff <= 0) {
+            headText = "Go now";
+          } else {
+            headText = formatCountdown(headDiff);
+          }
+        }
+
+        // subtle highlight if within 30 minutes to spawn
+        let rowClass = "";
+        if (spawnDiff !== null && spawnDiff > 0 && spawnDiff <= THIRTY_MIN) {
+          rowClass = "highlight";
+        }
+
+        // consider for global banner
+        if (nextRespawn && nextRespawn > now) {
+          if (!globalNext || nextRespawn < globalNext) {
+            globalNext = nextRespawn;
+            globalBossName = boss.name;
+          }
+        }
 
         const tr = document.createElement("tr");
+        tr.className = rowClass;
         tr.innerHTML = `
           <td data-label="Boss Name" class="boss-name">${boss.name}</td>
           <td data-label="Respawn Hours"><span class="tag">${boss.hoursAfterRespawn}h</span></td>
           <td data-label="Time of Death">${deathText}</td>
           <td data-label="Next Respawn">${nextText}</td>
           <td data-label="Countdown" class="countdown">${cdText}</td>
+          <td data-label="Head to Boss Area" class="countdown">${headText}</td>
           <td data-label="Controls" class="controls-cell">
             <button class="btn" onclick="markDeathNow('${boss.id}')">Death now</button>
             <button class="btn btn-secondary" onclick="clearDeath('${boss.id}')">Clear</button>
@@ -411,7 +494,21 @@
         const nextText = nextSpawn.toLocaleString();
         const cdText = formatCountdown(nextSpawn - now);
 
+        // consider for global banner
+        if (nextSpawn && nextSpawn > now) {
+          if (!globalNext || nextSpawn < globalNext) {
+            globalNext = nextSpawn;
+            globalBossName = boss.name;
+          }
+        }
+
         const tr = document.createElement("tr");
+        // also highlight if within 30 minutes for fixed bosses
+        const diff = nextSpawn - now;
+        if (diff > 0 && diff <= THIRTY_MIN) {
+          tr.className = "highlight";
+        }
+
         tr.innerHTML = `
           <td data-label="Boss Name" class="boss-name">${boss.name}</td>
           <td data-label="Schedule">${schedText}</td>
@@ -420,6 +517,24 @@
         `;
         fixedTbody.appendChild(tr);
       });
+
+      // ---- Global banner ----
+      if (!globalNext || !globalBossName) {
+        bannerEl.innerHTML = "<span>No upcoming spawns detected.</span>";
+      } else {
+        const diffMs = globalNext - now;
+        const countdownText = formatCountdown(diffMs);
+        const dateStr = globalNext.toLocaleDateString();
+        const timeStr = globalNext.toLocaleTimeString();
+
+        bannerEl.innerHTML = `
+          <span class="banner-label">${globalBossName}</span>
+          <span>respawns in</span>
+          <span class="banner-countdown">${countdownText}</span>
+          <span>at</span>
+          <span class="banner-time">${dateStr}, ${timeStr}</span>
+        `;
+      }
     }
 
     tick();
