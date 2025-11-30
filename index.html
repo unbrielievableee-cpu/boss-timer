@@ -16,36 +16,40 @@
     body {
       background: #05060a;
       color: #f5f5f5;
+      padding: 20px;
       min-height: 100vh;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 32px 16px;
     }
 
     .page {
-      width: 100%;
       max-width: 1100px;
+      margin: 0 auto;
     }
 
     h1 {
       font-size: 26px;
       font-weight: 600;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 26px 0 10px 0;
     }
 
     .subtitle {
       font-size: 13px;
       color: #a1a1aa;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
 
     .card {
       background: radial-gradient(circle at top left, #1f2937 0, #020617 60%);
       border-radius: 14px;
-      padding: 18px 18px 10px 18px;
-      box-shadow: 0 20px 35px rgba(0, 0, 0, 0.6);
+      padding: 16px;
       border: 1px solid #27272f;
+      box-shadow: 0 20px 35px rgba(0, 0, 0, 0.6);
+      overflow-x: auto;
     }
 
     table {
@@ -101,123 +105,321 @@
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
 
-    @media (max-width: 768px) {
-      body {
-        padding: 16px 8px;
+    .btn {
+      padding: 4px 8px;
+      font-size: 11px;
+      border-radius: 999px;
+      border: 1px solid #4b5563;
+      background: #111827;
+      color: #e5e7eb;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: #1f2937;
+    }
+
+    .btn-secondary {
+      opacity: 0.7;
+    }
+
+    .btn-secondary:hover {
+      opacity: 1;
+    }
+
+    @media (max-width: 650px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
       }
 
-      .card {
-        padding: 12px 10px 6px 10px;
+      thead {
+        display: none;
       }
 
-      th, td {
-        padding: 8px 6px;
-        font-size: 11px;
+      tr {
+        background: rgba(15, 23, 42, 0.8);
+        margin-bottom: 14px;
+        border-radius: 10px;
+        padding: 10px;
       }
 
-      h1 {
-        font-size: 20px;
+      td {
+        border: none;
+        padding: 6px 0;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #a1a1aa;
+        margin-right: 10px;
+      }
+
+      .controls-cell {
+        flex-direction: column;
+        gap: 6px;
+        align-items: flex-start;
       }
     }
   </style>
 </head>
 <body>
   <div class="page">
-    <h1>Dynamic Respawns</h1>
+    <h1>Boss Timers</h1>
     <p class="subtitle">
-      Edit the <code>bosses</code> list in the script to update death times and respawn intervals.
+      Dynamic bosses store death times automatically. Click “Death now” when a boss dies.
     </p>
 
+    <h2>Dynamic Respawns (Kill-Based)</h2>
     <div class="card">
       <table>
         <thead>
           <tr>
             <th>Boss Name</th>
-            <th>Hours After Respawn</th>
+            <th>Respawn Hours</th>
             <th>Time of Death</th>
             <th>Next Respawn</th>
             <th>Countdown</th>
+            <th>Controls</th>
           </tr>
         </thead>
         <tbody id="boss-table-body"></tbody>
       </table>
     </div>
+
+    <h2>Fixed Schedule Bosses</h2>
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Boss Name</th>
+            <th>Schedule</th>
+            <th>Next Spawn</th>
+            <th>Countdown</th>
+          </tr>
+        </thead>
+        <tbody id="fixed-table-body"></tbody>
+      </table>
+    </div>
   </div>
 
   <script>
-    // ==========================
-    // CONFIG: EDIT THIS SECTION
-    // ==========================
-    // hoursAfterRespawn: respawn interval in hours
-    // deathTime: actual kill time (local time)
-    //
-    // Example format: new Date("2025-11-27T20:15:00")
+    // ======================================
+    // 1. DYNAMIC BOSSES
+    // ======================================
 
     const bosses = [
-      {
-        name: "Venatus",
-        hoursAfterRespawn: 10,
-        deathTime: new Date("2025-11-30T15:09:00") // change to real kill time
-      },
-      {
-        name: "Viorent",
-        hoursAfterRespawn: 10,
-        deathTime: new Date("2025-11-30T15:10:00")
-      },
-      {
-        name: "Ego",
-        hoursAfterRespawn: 21,
-        deathTime: new Date("2025-11-30T07:06:00")
-      }
-      // Add more bosses here:
-      // { name: "Boss", hoursAfterRespawn: X, deathTime: new Date("YYYY-MM-DDTHH:MM:SS") },
+      { id: "venatus",  name: "Venatus",          hoursAfterRespawn: 10 },
+      { id: "viorent",  name: "Viorent",          hoursAfterRespawn: 10 },
+      { id: "ego",      name: "Ego",              hoursAfterRespawn: 21 },
+
+      { id: "livera",   name: "Livera",           hoursAfterRespawn: 24 },
+      { id: "araneo",   name: "Araneo",           hoursAfterRespawn: 24 },
+      { id: "undomiel", name: "Undomiel",         hoursAfterRespawn: 24 },
+
+      { id: "ladydalia", name: "Lady Dalia",      hoursAfterRespawn: 18 },
+      { id: "amentis",   name: "Amentis",         hoursAfterRespawn: 29 },
+      { id: "aquleus",   name: "General Aquleus", hoursAfterRespawn: 29 },
+
+      { id: "baronbraudmore", name: "Baron Braudmore", hoursAfterRespawn: 32 }
     ];
 
-    const tbody = document.getElementById("boss-table-body");
+    // ======================================
+    // DEFAULT DEATH TIMES YOU PROVIDED
+    // ======================================
 
-    function createRow(boss, index) {
+    const defaultDeathTimes = {
+      livera:   "2025-11-30T13:09:00",
+      araneo:   "2025-11-30T13:12:00",
+      undomiel: "2025-11-30T13:07:00",
+      ladydalia:"2025-11-30T19:07:00",
+      amentis:  "2025-11-30T23:16:00",
+      aquleus:  "2025-11-30T23:14:00",
+
+      venatus:  "2025-11-30T15:09:00",
+      viorent:  "2025-11-30T15:10:00",
+      ego:      "2025-11-30T07:06:00",
+
+      baronbraudmore: "2025-12-01T05:18:00"
+    };
+
+    // load from storage or default
+    bosses.forEach(boss => {
+      const stored = localStorage.getItem("bossTimer_death_" + boss.id);
+
+      if (stored) {
+        boss.deathTime = new Date(stored);
+      } else if (defaultDeathTimes[boss.id]) {
+        boss.deathTime = new Date(defaultDeathTimes[boss.id]);
+      } else {
+        boss.deathTime = null;
+      }
+    });
+
+    // ======================================
+    // 2. FIXED SCHEDULE BOSSES
+    // ======================================
+
+    const fixedBosses = [
+      {
+        name: "Clemantis",
+        slots: [
+          { day: 1, hour: 11, minute: 30 },
+          { day: 4, hour: 19, minute: 0 }
+        ]
+      },
+      {
+        name: "Saphirus",
+        slots: [
+          { day: 0, hour: 17, minute: 0 },
+          { day: 2, hour: 11, minute: 30 }
+        ]
+      },
+      {
+        name: "Neutro",
+        slots: [
+          { day: 2, hour: 19, minute: 0 },
+          { day: 4, hour: 11, minute: 30 }
+        ]
+      },
+      {
+        name: "Thymele",
+        slots: [
+          { day: 1, hour: 19, minute: 0 },
+          { day: 3, hour: 11, minute: 30 }
+        ]
+      }
+    ];
+
+    // ======================================
+    // HELPERS
+    // ======================================
+
+    function formatCountdown(ms) {
+      if (ms <= 0) return "Spawning now";
+      const sec = Math.floor(ms / 1000);
+      const h = Math.floor(sec / 3600).toString().padStart(2, "0");
+      const m = Math.floor((sec % 3600) / 60).toString().padStart(2, "0");
+      const s = (sec % 60).toString().padStart(2, "0");
+      return `${h}h ${m}m ${s}s`;
+    }
+
+    const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+    function nextWeeklySpawn(slots, now) {
+      let best = null;
+
+      slots.forEach(slot => {
+        const d = new Date(now);
+        const delta = (slot.day - d.getDay() + 7) % 7;
+        d.setDate(d.getDate() + delta);
+        d.setHours(slot.hour, slot.minute, 0, 0);
+
+        if (d <= now) d.setDate(d.getDate() + 7);
+
+        if (!best || d < best) best = d;
+      });
+
+      return best;
+    }
+
+    function markDeathNow(id) {
+      const b = bosses.find(x => x.id === id);
+      if (!b) return;
+      b.deathTime = new Date();
+      localStorage.setItem("bossTimer_death_" + id, b.deathTime.toISOString());
+      tick();
+    }
+
+    function clearDeath(id) {
+      const b = bosses.find(x => x.id === id);
+      if (!b) return;
+      b.deathTime = null;
+      localStorage.removeItem("bossTimer_death_" + id);
+      tick();
+    }
+
+    // ======================================
+    // RENDER TABLES
+    // ======================================
+
+    const tbody = document.getElementById("boss-table-body");
+    const fixedTbody = document.getElementById("fixed-table-body");
+
+    function renderDynamicRow(boss, i) {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td class="boss-name">${boss.name}</td>
-        <td><span class="tag">${boss.hoursAfterRespawn}h</span></td>
-        <td id="death-${index}"></td>
-        <td id="next-${index}"></td>
-        <td class="countdown" id="cd-${index}"></td>
+        <td data-label="Boss Name" class="boss-name">${boss.name}</td>
+        <td data-label="Respawn Hours"><span class="tag">${boss.hoursAfterRespawn}h</span></td>
+        <td data-label="Time of Death" id="death-${i}"></td>
+        <td data-label="Next Respawn" id="next-${i}"></td>
+        <td data-label="Countdown" class="countdown" id="cd-${i}"></td>
+        <td data-label="Controls" class="controls-cell">
+          <button class="btn" onclick="markDeathNow('${boss.id}')">Death now</button>
+          <button class="btn btn-secondary" onclick="clearDeath('${boss.id}')">Clear</button>
+        </td>
       `;
       tbody.appendChild(tr);
     }
 
-    bosses.forEach((boss, i) => createRow(boss, i));
-
-    function formatCountdown(ms) {
-      if (ms <= 0) return "Spawning now";
-      const totalSeconds = Math.floor(ms / 1000);
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-      return `${hours.toString().padStart(2, "0")}h `
-           + `${minutes.toString().padStart(2, "0")}m `
-           + `${seconds.toString().padStart(2, "0")}s`;
+    function renderFixedRow(boss, i) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td data-label="Boss Name" class="boss-name">${boss.name}</td>
+        <td data-label="Schedule" id="sched-${i}"></td>
+        <td data-label="Next Spawn" id="fnext-${i}"></td>
+        <td data-label="Countdown" class="countdown" id="fcd-${i}"></td>
+      `;
+      fixedTbody.appendChild(tr);
     }
+
+    bosses.forEach(renderDynamicRow);
+    fixedBosses.forEach(renderFixedRow);
+
+    // ======================================
+    // UPDATE LOOP
+    // ======================================
 
     function tick() {
       const now = new Date();
 
-      bosses.forEach((boss, index) => {
-        // Next Respawn = Time of death + Hours after respawn
-        const nextRespawn = new Date(
-          boss.deathTime.getTime() + boss.hoursAfterRespawn * 60 * 60 * 1000
+      bosses.forEach((boss, i) => {
+        const deathCell = document.getElementById(`death-${i}`);
+        const nextCell  = document.getElementById(`next-${i}`);
+        const cdCell    = document.getElementById(`cd-${i}`);
+
+        if (!boss.deathTime) {
+          deathCell.textContent = "Not set";
+          nextCell.textContent = "-";
+          cdCell.textContent = "-";
+          return;
+        }
+
+        const next = new Date(
+          boss.deathTime.getTime() +
+          boss.hoursAfterRespawn * 3600000
         );
 
-        const diff = nextRespawn - now;
-
-        const deathCell = document.getElementById(`death-${index}`);
-        const nextCell = document.getElementById(`next-${index}`);
-        const cdCell = document.getElementById(`cd-${index}`);
-
         deathCell.textContent = boss.deathTime.toLocaleString();
-        nextCell.textContent = nextRespawn.toLocaleString();
-        cdCell.textContent = formatCountdown(diff);
+        nextCell.textContent = next.toLocaleString();
+        cdCell.textContent = formatCountdown(next - now);
+      });
+
+      fixedBosses.forEach((boss, i) => {
+        const sched = document.getElementById(`sched-${i}`);
+        const next  = document.getElementById(`fnext-${i}`);
+        const cd    = document.getElementById(`fcd-${i}`);
+
+        sched.textContent = boss.slots
+          .map(s => `${dayNames[s.day]} ${s.hour.toString().padStart(2,"0")}:${s.minute.toString().padStart(2,"0")}`)
+          .join(", ");
+
+        const nextSpawn = nextWeeklySpawn(boss.slots, now);
+
+        next.textContent = nextSpawn.toLocaleString();
+        cd.textContent = formatCountdown(nextSpawn - now);
       });
     }
 
