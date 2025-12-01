@@ -5,256 +5,63 @@
   <title>EscobarPH Boss Timers</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+    body { background: #020617; color: #e5e7eb; padding: 24px; min-height: 100vh; }
+    .page { max-width: 1180px; margin: 0 auto; }
 
-    body {
-      background: #020617;
-      color: #e5e7eb;
-      padding: 24px;
-      min-height: 100vh;
-    }
-
-    .page {
-      max-width: 1180px;
-      margin: 0 auto;
-    }
-
-    h1 {
-      font-size: 28px;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-
-    .subtitle {
-      font-size: 13px;
-      color: #9ca3af;
-      margin-bottom: 16px;
-    }
+    h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+    .subtitle { font-size: 13px; color: #9ca3af; margin-bottom: 16px; }
 
     .hero {
-      margin-bottom: 24px;
-      padding: 10px 16px;
-      border-radius: 999px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      margin-bottom: 24px; padding: 10px 16px; border-radius: 999px;
+      display: flex; align-items: center; gap: 8px;
       background: radial-gradient(circle at top left, #22c55e33, #0b1120);
-      border: 1px solid #16a34a55;
-      font-size: 13px;
-      color: #bbf7d0;
+      border: 1px solid #16a34a55; font-size: 13px; color: #bbf7d0;
       min-height: 34px;
     }
+    .hero-label { font-weight: 600; background: #16a34a22; padding: 3px 8px; border-radius: 999px; }
+    .hero-strong { font-weight: 600; color: #f9fafb; }
 
-    .hero-label {
-      font-weight: 600;
-      background: #16a34a22;
-      padding: 3px 8px;
-      border-radius: 999px;
-      font-size: 12px;
-      color: #4ade80;
-    }
-
-    .hero-strong {
-      font-weight: 600;
-      color: #f9fafb;
-    }
-
-    .section-title {
-      font-size: 15px;
-      font-weight: 600;
-      margin: 18px 0 8px;
-    }
+    .section-title { font-size: 15px; font-weight: 600; margin: 18px 0 8px; }
 
     .table-card {
-      background: #020617;
-      border-radius: 14px;
-      border: 1px solid #111827;
-      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
-      padding: 12px 16px 16px;
-      overflow: hidden;
+      background: #020617; border-radius: 14px; border: 1px solid #111827;
+      box-shadow: 0 18px 45px rgba(15,23,42,0.9);
+      padding: 12px 16px 16px; overflow: hidden;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-
-    thead {
-      background: #020617;
-    }
-
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
     thead th {
-      text-align: left;
-      padding: 8px 6px;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #6b7280;
-      border-bottom: 1px solid #1f2937;
-      white-space: nowrap;
+      text-align: left; padding: 8px 6px; font-size: 11px; text-transform: uppercase;
+      color: #6b7280; border-bottom: 1px solid #1f2937; white-space: nowrap;
     }
+    tbody td { padding: 7px 6px; border-bottom: 1px solid #0f172a; white-space: nowrap; }
 
-    tbody tr:nth-child(even) {
-      background: #020617;
-    }
+    .td-name { font-weight: 600; }
+    .td-muted { color: #9ca3af; }
 
-    tbody tr:nth-child(odd) {
-      background: #020617;
-    }
+    .badge-respawn { padding: 2px 8px; border-radius: 999px; font-size: 11px; border: 1px solid #1f2937; }
+    .badge-dynamic { color: #bfdbfe; border-color: #3b82f6; }
+    .badge-fixed { color: #fed7aa; border-color: #f97316; }
 
-    tbody td {
-      padding: 7px 6px;
-      border-bottom: 1px solid #0f172a;
-      vertical-align: middle;
-      white-space: nowrap;
-    }
+    .countdown { font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 600; }
+    .countdown-soft { color: #9ca3af; }
 
-    tbody tr:last-child td {
-      border-bottom: none;
-    }
+    .btn { border-radius: 999px; padding: 5px 10px; font-size: 12px; cursor: pointer; }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-secondary { background: #0f172a; color: #e5e7eb; border: 1px solid #1f2937; }
 
-    .td-name {
-      font-weight: 600;
-      color: #e5e7eb;
-    }
+    .controls { display: flex; gap: 6px; justify-content: flex-end; }
 
-    .td-muted {
-      color: #9ca3af;
-    }
-
-    .badge-respawn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 11px;
-      background: #0b1120;
-      border: 1px solid #1f2937;
-      color: #9ca3af;
-    }
-
-    .badge-fixed {
-      border-color: #f97316;
-      color: #fed7aa;
-    }
-
-    .badge-dynamic {
-      border-color: #3b82f6;
-      color: #bfdbfe;
-    }
-
-    .countdown {
-      font-variant-numeric: tabular-nums;
-      font-feature-settings: "tnum" 1;
-      font-size: 13px;
-      font-weight: 600;
-      color: #e5e7eb;
-    }
-
-    .countdown-soft {
-      color: #9ca3af;
-      font-weight: 500;
-    }
-
-    .btn {
-      border: none;
-      border-radius: 999px;
-      padding: 5px 10px;
-      font-size: 12px;
-      cursor: pointer;
-      font-weight: 500;
-      transition: background 0.12s ease, transform 0.06s ease, box-shadow 0.12s ease;
-      white-space: nowrap;
-    }
-
-    .btn-primary {
-      background: #2563eb;
-      color: #f9fafb;
-      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
-    }
-
-    .btn-primary:hover {
-      background: #1d4ed8;
-      transform: translateY(-1px);
-    }
-
-    .btn-secondary {
-      background: #0f172a;
-      color: #e5e7eb;
-      border: 1px solid #1f2937;
-    }
-
-    .btn-secondary:hover {
-      background: #020617;
-      transform: translateY(-1px);
-    }
-
-    .btn:active {
-      transform: translateY(0);
-      box-shadow: none;
-    }
-
-    .controls {
-      display: flex;
-      gap: 6px;
-      justify-content: flex-end;
-    }
-
-    .error {
-      margin-top: 8px;
-      font-size: 12px;
-      color: #fecaca;
-    }
-
-    .nowrap {
-      white-space: nowrap;
-    }
-
-    .center {
-      text-align: center;
-    }
-
-    /* Row highlights based on "Head to Boss Area" timer */
-    .highlight-10m {
-      background-color: rgba(255, 165, 0, 0.25) !important; /* orange */
-    }
-    .highlight-5m {
-      background-color: rgba(255, 0, 0, 0.25) !important;   /* red */
-    }
-
-    @media (max-width: 900px) {
-      body {
-        padding: 12px;
-      }
-
-      .table-card {
-        padding: 8px;
-      }
-
-      table {
-        font-size: 11px;
-      }
-
-      .btn {
-        padding: 4px 8px;
-        font-size: 11px;
-      }
-    }
+    .highlight-10m { background: rgba(255,165,0,0.25) !important; }
+    .highlight-5m { background: rgba(255,0,0,0.25) !important; }
   </style>
 </head>
 <body>
   <div class="page">
+
     <h1>EscobarPH Boss Timers</h1>
-    <div class="subtitle">
-      Dynamic bosses store death times automatically. Sorted by next respawn. Data source: Google Sheet.
-    </div>
+    <div class="subtitle">Dynamic bosses store death times automatically.</div>
 
     <div id="hero" class="hero">
       <span class="hero-label">Next respawn</span>
@@ -263,8 +70,9 @@
 
     <div id="error" class="error" style="display:none;"></div>
 
+    <!-- DYNAMIC BOSSES -->
     <div class="section-title">Dynamic Respawns (Kill-Based)</div>
-    <div class="table-card" style="margin-bottom: 18px;">
+    <div class="table-card" style="margin-bottom:18px;">
       <table>
         <thead>
           <tr>
@@ -277,11 +85,11 @@
             <th class="center">Controls</th>
           </tr>
         </thead>
-        <tbody id="dynamic-body">
-        </tbody>
+        <tbody id="dynamic-body"></tbody>
       </table>
     </div>
 
+    <!-- FIXED BOSSES -->
     <div class="section-title">Fixed Schedule Bosses</div>
     <div class="table-card">
       <table>
@@ -294,432 +102,175 @@
             <th class="center">Controls</th>
           </tr>
         </thead>
-        <tbody id="fixed-body">
-        </tbody>
+        <tbody id="fixed-body"></tbody>
       </table>
     </div>
+
   </div>
 
   <script>
-    // Backend endpoint: your Web App URL
-    const API_URL = 'https://script.google.com/macros/s/AKfycbyMxe_s06Cwp4ZqJmDKFEjU5bjLlNZ2xC55I2BK7OZKAGRaQiWbCxqG73FyLaDxoIr6/exec';
-    const API_TOKEN = null; // set if you configured TOKEN in Apps Script
+    const API_URL = "https://script.google.com/macros/s/AKfycbyMxe_s06Cwp4ZqJmDKFEjU5bjLlNZ2xC55I2BK7OZKAGRaQiWbCxqG73FyLaDxoIr6/exec";
 
-    const WEEKDAY_INDEX = {
-      Sunday: 0,
-      Monday: 1,
-      Tuesday: 2,
-      Wednesday: 3,
-      Thursday: 4,
-      Friday: 5,
-      Saturday: 6,
-    };
+    const WEEKDAY_INDEX = {Sunday:0,Monday:1,Tuesday:2,Wednesday:3,Thursday:4,Friday:5,Saturday:6};
 
-    let bossesRaw = [];
-    let bossesDynamic = [];
-    let bossesFixed = [];
-    let countdownIntervalId = null;
-    let pollIntervalId = null;
-    let consecutiveFetchFailures = 0;
+    let bossesRaw=[], bossesDynamic=[], bossesFixed=[];
 
-    const HEAD_OFFSET_MS = 5 * 60 * 1000;   // 5 minutes before spawn
-    const EXPIRE_OFFSET_MS = 2 * 60 * 1000; // 2 minutes after spawn
+    const HEAD_OFFSET_MS = 5*60*1000;
+    const EXPIRE_OFFSET_MS = 2*60*1000;
 
-    function formatCountdown(ms) {
-      if (ms <= 0) return '00h 00m 00s';
-      const totalSeconds = Math.floor(ms / 1000);
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-      const pad = (n) => String(n).padStart(2, '0');
-      return `${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`;
+    function formatCountdown(ms){
+      if(ms<=0)return"00h 00m 00s";
+      let s=Math.floor(ms/1000), h=Math.floor(s/3600);
+      s%=3600; let m=Math.floor(s/60); s%=60;
+      const pad=n=>String(n).padStart(2,"0");
+      return `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
     }
 
-    function formatDateTime(dt) {
-      if (!dt || isNaN(dt.getTime())) return '—';
-      return dt.toLocaleString(undefined, {
-        year: 'numeric',
-        month: 'numeric',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        second: '2-digit',
-      });
+    function formatDateTime(dt){
+      return dt && !isNaN(dt) ? dt.toLocaleString() : "—";
     }
 
-    function formatSchedule(boss) {
-      const p1 = (boss.fixed_day_1 && boss.fixed_time_1_24h)
-        ? `${boss.fixed_day_1} ${boss.fixed_time_1_24h}`
-        : '';
-      const p2 = (boss.fixed_day_2 && boss.fixed_time_2_24h)
-        ? `${boss.fixed_day_2} ${boss.fixed_time_2_24h}`
-        : '';
-      if (p1 && p2) return p1 + ', ' + p2;
-      return p1 || p2 || '—';
+    function formatSchedule(b){
+      const p1 = b.fixed_day_1? `${b.fixed_day_1} ${b.fixed_time_1_24h}`:"";
+      const p2 = b.fixed_day_2? `${b.fixed_day_2} ${b.fixed_time_2_24h}`:"";
+      return p1 && p2 ? `${p1}, ${p2}` : p1 || p2 || "—";
     }
 
-    function nextWeeklyOccurrence(dayName, time24, fromDate) {
-      if (!dayName || !time24 || !WEEKDAY_INDEX.hasOwnProperty(dayName)) {
-        return null;
+    function nextWeekly(day, time, now){
+      const [H,M] = time.split(":").map(Number);
+      let d=new Date(now);
+      let target=WEEKDAY_INDEX[day];
+      let delta=(target-now.getDay()+7)%7;
+      d.setDate(d.getDate()+delta);
+      d.setHours(H,M,0,0);
+      if(d<=now) d.setDate(d.getDate()+7);
+      return d;
+    }
+
+    function compute(b){
+      const now=new Date();
+      if(b.respawn_type==="dynamic"){
+        if(!b.last_death_iso) return null;
+        return new Date(new Date(b.last_death_iso).getTime() + b.respawn_hours*3600000);
       }
-      const [hourStr, minuteStr] = time24.split(':');
-      const hour = parseInt(hourStr, 10);
-      const minute = parseInt(minuteStr, 10);
-      if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
-
-      const targetDow = WEEKDAY_INDEX[dayName];
-      const curDow = fromDate.getDay();
-      let deltaDays = (targetDow - curDow + 7) % 7;
-
-      const candidate = new Date(fromDate.getTime());
-      candidate.setSeconds(0, 0);
-      candidate.setDate(candidate.getDate() + deltaDays);
-      candidate.setHours(hour, minute, 0, 0);
-
-      if (candidate <= fromDate) {
-        candidate.setDate(candidate.getDate() + 7);
-      }
-      return candidate;
+      let arr=[];
+      if(b.fixed_day_1) arr.push(nextWeekly(b.fixed_day_1,b.fixed_time_1_24h,now));
+      if(b.fixed_day_2) arr.push(nextWeekly(b.fixed_day_2,b.fixed_time_2_24h,now));
+      return arr.length? arr.sort((a,b)=>a-b)[0] : null;
     }
 
-    function computeNextRespawn(boss) {
-      const now = new Date();
-
-      if (boss.respawn_type === 'dynamic') {
-        if (!boss.last_death_iso || !boss.respawn_hours) return null;
-        const death = new Date(boss.last_death_iso);
-        if (isNaN(death.getTime())) return null;
-        const hrs = Number(boss.respawn_hours);
-        if (!hrs || isNaN(hrs)) return null;
-        return new Date(death.getTime() + hrs * 3600 * 1000);
-      }
-
-      if (boss.respawn_type === 'fixed') {
-        const candidates = [];
-        if (boss.fixed_day_1 && boss.fixed_time_1_24h) {
-          const c1 = nextWeeklyOccurrence(boss.fixed_day_1, boss.fixed_time_1_24h, now);
-          if (c1) candidates.push(c1);
-        }
-        if (boss.fixed_day_2 && boss.fixed_time_2_24h) {
-          const c2 = nextWeeklyOccurrence(boss.fixed_day_2, boss.fixed_time_2_24h, now);
-          if (c2) candidates.push(c2);
-        }
-        if (!candidates.length) return null;
-        return candidates.reduce((min, cur) => (cur < min ? cur : min));
-      }
-
-      return null;
-    }
-
-    function enrichBosses() {
-      const now = new Date();
-      bossesDynamic = [];
-      bossesFixed = [];
-
-      bossesRaw.forEach((b) => {
-        const clone = { ...b };
-        clone.nextRespawn = computeNextRespawn(clone);
-        clone.msRemaining = clone.nextRespawn
-          ? clone.nextRespawn.getTime() - now.getTime()
-          : null;
-
-        if (clone.respawn_type === 'dynamic') {
-          bossesDynamic.push(clone);
-        } else if (clone.respawn_type === 'fixed') {
-          bossesFixed.push(clone);
-        }
-      });
-
-      sortDynamicForDisplay();
-      sortFixedForDisplay();
-    }
-
-    function sortDynamicForDisplay() {
-      const now = new Date();
-      bossesDynamic.forEach(b => {
-        b.msRemaining = b.nextRespawn ? b.nextRespawn.getTime() - now.getTime() : null;
-      });
-
-      bossesDynamic.sort((a, b) => {
-        const ra = (a.nextRespawn ? a.nextRespawn.getTime() - now.getTime() : Infinity);
-        const rb = (b.nextRespawn ? b.nextRespawn.getTime() - now.getTime() : Infinity);
-
-        const aExpired = ra <= -EXPIRE_OFFSET_MS;
-        const bExpired = rb <= -EXPIRE_OFFSET_MS;
-
-        if (aExpired && !bExpired) return 1;
-        if (!aExpired && bExpired) return -1;
-
-        return ra - rb;
+    function enrich(){
+      bossesDynamic=[]; bossesFixed=[];
+      bossesRaw.forEach(b=>{
+        let o={...b};
+        o.nextRespawn=compute(o);
+        if(o.respawn_type==="dynamic") bossesDynamic.push(o);
+        else bossesFixed.push(o);
       });
     }
 
-    function sortFixedForDisplay() {
-      const now = new Date();
-      bossesFixed.forEach(b => {
-        b.msRemaining = b.nextRespawn ? b.nextRespawn.getTime() - now.getTime() : null;
+    function render(){
+      const dyn=document.getElementById("dynamic-body");
+      const fix=document.getElementById("fixed-body");
+      dyn.innerHTML=""; fix.innerHTML="";
+
+      bossesDynamic.forEach(b=>{
+        dyn.innerHTML+=`
+          <tr data-boss-name="${b.boss_name}">
+            <td class="td-name">${b.boss_name}</td>
+            <td><span class="badge-respawn badge-dynamic">${b.respawn_hours}h</span></td>
+            <td class="td-muted">${formatDateTime(new Date(b.last_death_iso))}</td>
+            <td class="td-muted">${formatDateTime(b.nextRespawn)}</td>
+            <td><span data-role="countdown-main">--</span></td>
+            <td><span data-role="countdown-head">--</span></td>
+            <td class="center">
+              <div class="controls">
+                <button class="btn btn-primary" data-action="death" data-boss="${b.boss_name}">Death now</button>
+                <button class="btn btn-secondary" data-action="clear" data-boss="${b.boss_name}">Clear</button>
+              </div>
+            </td>
+          </tr>`;
       });
 
-      bossesFixed.sort((a, b) => {
-        const ra = (a.nextRespawn ? a.nextRespawn.getTime() - now.getTime() : Infinity);
-        const rb = (b.nextRespawn ? b.nextRespawn.getTime() - now.getTime() : Infinity);
-        return ra - rb;
-      });
-    }
-
-    function renderTables() {
-      const dynBody = document.getElementById('dynamic-body');
-      const fixBody = document.getElementById('fixed-body');
-      dynBody.innerHTML = '';
-      fixBody.innerHTML = '';
-
-      bossesDynamic.forEach((boss) => {
-        const tr = document.createElement('tr');
-        tr.dataset.bossName = boss.boss_name;
-
-        tr.innerHTML = `
-          <td class="td-name">${boss.boss_name}</td>
-          <td>
-            <span class="badge-respawn badge-dynamic">
-              ${boss.respawn_hours ? boss.respawn_hours + 'h' : '—'}
-            </span>
-          </td>
-          <td class="td-muted nowrap" data-role="death">
-            ${boss.last_death_iso ? formatDateTime(new Date(boss.last_death_iso)) : '—'}
-          </td>
-          <td class="td-muted nowrap" data-role="next">
-            ${boss.nextRespawn ? formatDateTime(boss.nextRespawn) : '—'}
-          </td>
-          <td class="nowrap">
-            <span class="countdown" data-role="countdown-main">--h --m --s</span>
-          </td>
-          <td class="nowrap">
-            <span class="countdown countdown-soft" data-role="countdown-head">--h --m --s</span>
-          </td>
-          <td class="center">
-            <div class="controls">
-              <button class="btn btn-primary" data-action="death" data-boss="${boss.boss_name}">Death now</button>
-              <button class="btn btn-secondary" data-action="clear" data-boss="${boss.boss_name}">Clear</button>
-            </div>
-          </td>
-        `;
-
-        dynBody.appendChild(tr);
+      bossesFixed.forEach(b=>{
+        fix.innerHTML+=`
+          <tr data-boss-name="${b.boss_name}">
+            <td class="td-name">${b.boss_name} <span class="badge-respawn badge-fixed">Fixed</span></td>
+            <td class="td-muted">${formatSchedule(b)}</td>
+            <td class="td-muted">${formatDateTime(b.nextRespawn)}</td>
+            <td><span data-role="countdown-main">--</span></td>
+            <td class="center td-muted">—</td>
+          </tr>`;
       });
 
-      bossesFixed.forEach((boss) => {
-        const tr = document.createElement('tr');
-        tr.dataset.bossName = boss.boss_name;
+      attachControls();
+    }
 
-        tr.innerHTML = `
-          <td class="td-name">
-            ${boss.boss_name}
-            <span class="badge-respawn badge-fixed" style="margin-left:6px;">Fixed</span>
-          </td>
-          <td class="td-muted nowrap">${formatSchedule(boss)}</td>
-          <td class="td-muted nowrap" data-role="next">
-            ${boss.nextRespawn ? formatDateTime(boss.nextRespawn) : '—'}
-          </td>
-          <td class="nowrap">
-            <span class="countdown" data-role="countdown-main">--h --m --s</span>
-          </td>
-          <td class="center">
-            <div class="controls">
-              <button class="btn btn-primary" data-action="death" data-boss="${boss.boss_name}">Death now</button>
-              <button class="btn btn-secondary" data-action="clear" data-boss="${boss.boss_name}">Clear</button>
-            </div>
-          </td>
-        `;
+    function updateHero(){
+      const now=new Date();
+      let future=bossesDynamic.concat(bossesFixed)
+        .filter(b=>b.nextRespawn>now)
+        .sort((a,b)=>a.nextRespawn-b.nextRespawn);
 
-        fixBody.appendChild(tr);
+      const el=document.getElementById("hero-text");
+      if(!future.length){ el.textContent="No upcoming respawns."; return; }
+
+      let b=future[0], ms=b.nextRespawn-now;
+      el.innerHTML=`<span class="hero-strong">${b.boss_name}</span> respawns in <span class="hero-strong">${formatCountdown(ms)}</span> at <span class="hero-strong">${formatDateTime(b.nextRespawn)}</span>`;
+    }
+
+    function countdown(){
+      const now=new Date();
+      bossesDynamic.forEach(b=>{
+        let row=document.querySelector(`tr[data-boss-name="${b.boss_name}"]`);
+        if(!row) return;
+        const ms=b.nextRespawn-now, head=ms-HEAD_OFFSET_MS;
+        row.querySelector('[data-role="countdown-main"]').textContent=formatCountdown(ms);
+        row.querySelector('[data-role="countdown-head"]').textContent=formatCountdown(head);
+
+        row.classList.remove("highlight-10m","highlight-5m");
+        let mins=head/60000;
+        if(mins<5)row.classList.add("highlight-5m");
+        else if(mins<10)row.classList.add("highlight-10m");
       });
 
-      attachButtonHandlers();
-    }
-
-    // HERO: pick the next FUTURE respawn only (ignore past ones)
-    function updateHero() {
-      const hero = document.getElementById('hero-text');
-      if (!hero) return;
-
-      const now = new Date();
-      const candidates = bossesDynamic.concat(bossesFixed).filter(b => b.nextRespawn);
-
-      let best = null;
-
-      candidates.forEach((b) => {
-        const ms = b.nextRespawn.getTime() - now.getTime();
-        if (ms <= 0) {
-          // already respawned, skip
-          return;
-        }
-        if (!best || ms < best.ms) {
-          best = { boss: b, ms };
-        }
+      bossesFixed.forEach(b=>{
+        let row=document.querySelector(`tr[data-boss-name="${b.boss_name}"]`);
+        if(!row) return;
+        row.querySelector('[data-role="countdown-main"]').textContent=formatCountdown(b.nextRespawn-now);
       });
 
-      if (!best) {
-        hero.textContent = 'No upcoming respawns available.';
-        return;
-      }
-
-      hero.innerHTML = `
-        <span class="hero-strong">${best.boss.boss_name}</span>
-        respawns in
-        <span class="hero-strong">${formatCountdown(best.ms)}</span>
-        at
-        <span class="hero-strong">${formatDateTime(best.boss.nextRespawn)}</span>
-      `;
+      updateHero();
     }
 
-    function startCountdownLoop() {
-      if (countdownIntervalId) {
-        clearInterval(countdownIntervalId);
-      }
-
-      countdownIntervalId = setInterval(() => {
-        const now = new Date();
-        let needsResort = false;
-
-        // Dynamic bosses: main countdown + head countdown + highlighting + resort after expire
-        bossesDynamic.forEach((boss) => {
-          if (!boss.nextRespawn) return;
-
-          const row = document.querySelector(`tr[data-boss-name="${boss.boss_name}"]`);
-          const msRemaining = boss.nextRespawn.getTime() - now.getTime();
-          const headMs = msRemaining - HEAD_OFFSET_MS;
-
-          const previouslyExpired = boss._expired || false;
-          const nowExpired = msRemaining <= -EXPIRE_OFFSET_MS;
-          boss._expired = nowExpired;
-          if (!previouslyExpired && nowExpired) {
-            needsResort = true;
-          }
-
-          if (!row) return;
-          const mainEl = row.querySelector('[data-role="countdown-main"]');
-          const headEl = row.querySelector('[data-role="countdown-head"]');
-
-          // Highlight logic based on head-to-boss-area
-          row.classList.remove('highlight-10m', 'highlight-5m');
-          const headMinutes = headMs / 60000;
-          if (headMinutes < 5) {
-            row.classList.add('highlight-5m');
-          } else if (headMinutes < 10) {
-            row.classList.add('highlight-10m');
-          }
-
-          if (mainEl) mainEl.textContent = formatCountdown(msRemaining);
-          if (headEl) headEl.textContent = formatCountdown(headMs);
-        });
-
-        // Fixed bosses: only main countdown
-        bossesFixed.forEach((boss) => {
-          if (!boss.nextRespawn) return;
-
-          const row = document.querySelector(`tr[data-boss-name="${boss.boss_name}"]`);
-          if (!row) return;
-          const msRemaining = boss.nextRespawn.getTime() - now.getTime();
-          const mainEl = row.querySelector('[data-role="countdown-main"]');
-          if (mainEl) mainEl.textContent = formatCountdown(msRemaining);
-        });
-
-        if (needsResort) {
-          sortDynamicForDisplay();
-          renderTables();
-        }
-
-        // Recompute hero banner every second
-        updateHero();
-      }, 1000);
-    }
-
-    function showError(msg) {
-      const el = document.getElementById('error');
-      el.textContent = msg;
-      el.style.display = msg ? 'block' : 'none';
-    }
-
-    async function fetchBosses() {
-      try {
-        const res = await fetch(API_URL);
-        const data = await res.json();
-        if (!data.ok) {
-          throw new Error(data.error || 'Unknown error');
-        }
-
-        bossesRaw = data.bosses || [];
-        enrichBosses();
-        renderTables();
-        startCountdownLoop();
-        updateHero(); // update banner immediately after each fetch
-
-        consecutiveFetchFailures = 0;
-        showError('');
-
-        if (!pollIntervalId) {
-          pollIntervalId = setInterval(fetchBosses, 30000); // every 30s
-        }
-      } catch (err) {
-        consecutiveFetchFailures += 1;
-        if (consecutiveFetchFailures >= 2) {
-          showError('Failed to load bosses: ' + err.message);
-        }
-      }
-    }
-
-    async function sendAction(bossName, action) {
-      if (!bossName) return;
-      showError('');
-      try {
-        const payload = {
-          action,
-          boss_name: bossName,
-        };
-
-        if (action === 'update') {
-          payload.last_death_iso = new Date().toISOString();
-        } else if (action === 'clear') {
-          payload.last_death_iso = ''; // ignored in Apps Script when action = clear
-        }
-
-        if (API_TOKEN) {
-          payload.token = API_TOKEN;
-        }
-
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify(payload),
-        });
-
-        const data = await res.json();
-        if (!data.ok) {
-          throw new Error(data.error || 'Unknown error');
-        }
-
-        await fetchBosses();
-      } catch (err) {
-        showError('Failed to update boss: ' + err.message);
-      }
-    }
-
-    function attachButtonHandlers() {
-      document.querySelectorAll('button[data-action]').forEach((btn) => {
-        btn.onclick = (e) => {
-          const actionAttr = e.currentTarget.getAttribute('data-action');
-          const bossName = e.currentTarget.getAttribute('data-boss');
-          if (actionAttr === 'death') {
-            sendAction(bossName, 'update');
-          } else if (actionAttr === 'clear') {
-            sendAction(bossName, 'clear');
-          }
+    function attachControls(){
+      document.querySelectorAll("[data-action]").forEach(btn=>{
+        btn.onclick=()=>{
+          const boss=btn.dataset.boss;
+          const act=btn.dataset.action;
+          send(boss,act);
         };
       });
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      fetchBosses();
-    });
+    async function send(name,action){
+      const body={action,boss_name:name};
+      if(action==="update") body.last_death_iso=new Date().toISOString();
+      await fetch(API_URL,{method:"POST",body:JSON.stringify(body)});
+      load();
+    }
+
+    async function load(){
+      const res=await fetch(API_URL);
+      const data=await res.json();
+      bossesRaw=data.bosses;
+      enrich();
+      render();
+    }
+
+    load();
+    setInterval(load, 10000);   // FETCH EVERY 10 SECONDS
+    setInterval(countdown, 1000);
   </script>
 </body>
 </html>
