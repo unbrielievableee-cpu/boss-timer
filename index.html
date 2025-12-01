@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>EscobarPH Boss Respawn Timers</title>
+  <title>Boss Respawn Timers</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
@@ -212,7 +212,7 @@
 </head>
 <body>
   <div class="page">
-    <h1>EscobarPH Boss Timers</h1>
+    <h1>Boss Timers</h1>
     <p class="subtitle">
       Dynamic bosses store death times automatically. Sorted by next respawn.
     </p>
@@ -275,29 +275,30 @@
 
       { id: "baronbraudmore", name: "Baron Braudmore", hoursAfterRespawn: 32 },
 
-      // New bosses with unknown death times
+      // New bosses
       { id: "wannitas", name: "Wannitas",         hoursAfterRespawn: 48 },
       { id: "metus",    name: "Metus",            hoursAfterRespawn: 48 },
       { id: "duplican", name: "Duplican",         hoursAfterRespawn: 48 },
-      { id: "shuliar",  name: "Shuliar",          hoursAfterRespawn: 35 }
+      { id: "shuliar",  name: "Shuliar",          hoursAfterRespawn: 35 },
+      { id: "larba",    name: "Larba",            hoursAfterRespawn: 35 }
     ];
 
     const defaultDeathTimes = {
-      livera:"2025-11-30T13:09:00",
-      araneo:"2025-11-30T13:12:00",
-      undomiel:"2025-11-30T13:07:00",
-      ladydalia:"2025-11-30T19:07:00",
-      amentis:"2025-11-30T23:16:00",
-      aquleus:"2025-11-30T23:14:00",
-      venatus:"2025-12-01T11:10:52",
-      viorent:"2025-12-01T11:11:41",
-      ego:"2025-12-01T04:10:00",
-      baronbraudmore:"2025-12-01T05:21:30",
-      shuliar:"2025-11-30T00:35:00",
-      duplican:"2025-11-30T13:43:00",
-      metus:"2025-11-30T13:41:00",
-      wannitas:"2025-11-30T13:38:00"
-      // note: no defaults for Wannitas / Metus / Duplican / Shuliar
+      livera:        "2025-11-30T13:09:00",
+      araneo:        "2025-11-30T13:12:00",
+      undomiel:      "2025-11-30T13:07:00",
+      ladydalia:     "2025-11-30T19:07:00",
+      amentis:       "2025-11-30T23:16:00",
+      aquleus:       "2025-11-30T23:14:00",
+      venatus:       "2025-12-01T01:23:00",
+      viorent:       "2025-12-01T01:23:00",
+      ego:           "2025-12-01T04:10:00",
+      baronbraudmore:"2025-12-01T05:18:00",
+      shuliar:       "2025-11-30T11:38:51",
+      duplican:      "2025-11-30T13:43:00",
+      metus:         "2025-11-30T13:41:00",
+      wannitas:      "2025-11-30T13:38:00",
+      larba:         "2025-12-01T11:39:00"
     };
 
     bosses.forEach(b => {
@@ -314,18 +315,12 @@
     // ======================================
 
     const fixedBosses = [
-  { name:"Clemantis", slots:[{day:1,hour:11,minute:30},{day:4,hour:19,minute:0}] },
-  { name:"Saphirus",  slots:[{day:0,hour:17,minute:0},{day:2,hour:11,minute:30}] },
-  { name:"Neutro",    slots:[{day:2,hour:19,minute:0},{day:4,hour:11,minute:30}] },
-  { name:"Thymele",   slots:[{day:1,hour:19,minute:0},{day:3,hour:11,minute:30}] },
-
-  { name:"Roderick",
-    slots: [
-      { day: 5, hour: 19, minute: 0 } // Friday 19:00
-    ]
-  }
-];
-
+      { name:"Clemantis", slots:[{day:1,hour:11,minute:30},{day:4,hour:19,minute:0}] },
+      { name:"Saphirus",  slots:[{day:0,hour:17,minute:0},{day:2,hour:11,minute:30}] },
+      { name:"Neutro",    slots:[{day:2,hour:19,minute:0},{day:4,hour:11,minute:30}] },
+      { name:"Thymele",   slots:[{day:1,hour:19,minute:0},{day:3,hour:11,minute:30}] },
+      { name:"Roderick",  slots:[{day:5,hour:19,minute:0}] } // Friday 19:00
+    ];
 
     // ======================================
     // HELPERS
@@ -340,158 +335,31 @@
       return `${h}h ${m}m ${sec}s`;
     }
 
-    const dayNames=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
     function nextWeeklySpawn(slots, now){
-      let best=null;
-      slots.forEach(s=>{
-        const d=new Date(now);
-        const delta=(s.day - d.getDay() + 7)%7;
-        d.setDate(d.getDate()+delta);
-        d.setHours(s.hour,s.minute,0,0);
-        if(d<=now) d.setDate(d.getDate()+7);
-        if(!best || d<best) best=d;
+      let best = null;
+      slots.forEach(s => {
+        const d = new Date(now);
+        const delta = (s.day - d.getDay() + 7) % 7;
+        d.setDate(d.getDate() + delta);
+        d.setHours(s.hour, s.minute, 0, 0);
+        if (d <= now) d.setDate(d.getDate() + 7);
+        if (!best || d < best) best = d;
       });
       return best;
     }
 
     function markDeathNow(id){
-      const b=bosses.find(x=>x.id===id);
-      b.deathTime=new Date();
-      localStorage.setItem("bossTimer_death_"+id,b.deathTime.toISOString());
+      const b = bosses.find(x => x.id === id);
+      if (!b) return;
+      b.deathTime = new Date();
+      localStorage.setItem("bossTimer_death_" + id, b.deathTime.toISOString());
       tick();
     }
 
     function clearDeath(id){
-      const b=bosses.find(x=>x.id===id);
-      b.deathTime=null;
-      localStorage.removeItem("bossTimer_death_"+id);
-      tick();
-    }
-
-    const tbody=document.getElementById("boss-table-body");
-    const fixedTbody=document.getElementById("fixed-table-body");
-    const bannerEl=document.getElementById("next-banner");
-
-    function tick(){
-      const now=new Date();
-      const THIRTY_MIN=30*60*1000;
-
-      let globalNext=null;
-      let globalBossName=null;
-
-      // dynamic
-      const dynList=bosses.map(b=>{
-        let next=null;
-        if(b.deathTime){
-          next=new Date(b.deathTime.getTime()+b.hoursAfterRespawn*3600000);
-        }
-        return {boss:b,nextRespawn:next};
-      });
-
-      dynList.sort((a,b)=>{
-        if(!a.nextRespawn && !b.nextRespawn) return a.boss.name.localeCompare(b.boss.name);
-        if(!a.nextRespawn) return 1;
-        if(!b.nextRespawn) return -1;
-        return a.nextRespawn - b.nextRespawn;
-      });
-
-      tbody.innerHTML="";
-
-      dynList.forEach(({boss,nextRespawn})=>{
-        const deathText=boss.deathTime?boss.deathTime.toLocaleString():"Not set";
-        const nextText=nextRespawn?nextRespawn.toLocaleString():"-";
-        const diff=nextRespawn?nextRespawn-now:null;
-        const cdText=nextRespawn?formatCountdown(diff):"-";
-
-        let headText="-";
-        if(nextRespawn){
-          const headDiff=diff - 5*60*1000;
-          if(diff <= 0){ headText="-"; }
-          else if(headDiff<=0){ headText="Go now"; }
-          else headText=formatCountdown(headDiff);
-        }
-
-        let rowClass="";
-        if(diff!==null && diff>0 && diff<=THIRTY_MIN) rowClass="highlight";
-
-        if(nextRespawn && nextRespawn>now){
-          if(!globalNext || nextRespawn<globalNext){
-            globalNext=nextRespawn;
-            globalBossName=boss.name;
-          }
-        }
-
-        const tr=document.createElement("tr");
-        tr.className=rowClass;
-        tr.innerHTML=`
-          <td data-label="Boss Name" class="boss-name">${boss.name}</td>
-          <td data-label="Respawn Hours"><span class="tag">${boss.hoursAfterRespawn}h</span></td>
-          <td data-label="Time of Death">${deathText}</td>
-          <td data-label="Next Respawn">${nextText}</td>
-          <td data-label="Countdown" class="countdown">${cdText}</td>
-          <td data-label="Head to Boss Area" class="countdown">${headText}</td>
-          <td data-label="Controls" class="controls-cell">
-            <button class="btn" onclick="markDeathNow('${boss.id}')">Death now</button>
-            <button class="btn btn-secondary" onclick="clearDeath('${boss.id}')">Clear</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      // fixed
-      const fixedList=fixedBosses.map(b=>{
-        const nextSpawn=nextWeeklySpawn(b.slots,now);
-        return {boss:b,nextSpawn};
-      });
-
-      fixedList.sort((a,b)=>a.nextSpawn - b.nextSpawn);
-
-      fixedTbody.innerHTML="";
-
-      fixedList.forEach(({boss,nextSpawn})=>{
-        const sched=boss.slots.map(s=>
-          `${dayNames[s.day]} ${String(s.hour).padStart(2,"0")}:${String(s.minute).padStart(2,"0")}`
-        ).join(", ");
-
-        const cdText=formatCountdown(nextSpawn-now);
-
-        const tr=document.createElement("tr");
-        const diff=nextSpawn-now;
-        if(diff>0 && diff<=THIRTY_MIN) tr.className="highlight";
-
-        tr.innerHTML=`
-          <td data-label="Boss Name" class="boss-name">${boss.name}</td>
-          <td data-label="Schedule">${sched}</td>
-          <td data-label="Next Spawn">${nextSpawn.toLocaleString()}</td>
-          <td data-label="Countdown" class="countdown">${cdText}</td>
-        `;
-        fixedTbody.appendChild(tr);
-
-        if(nextSpawn>now){
-          if(!globalNext || nextSpawn<globalNext){
-            globalNext=nextSpawn;
-            globalBossName=boss.name;
-          }
-        }
-      });
-
-      // banner
-      if(!globalNext){
-        bannerEl.innerHTML=`<span>No upcoming spawns detected.</span>`;
-      } else {
-        bannerEl.innerHTML=`
-          <span class="banner-label">${globalBossName}</span>
-          <span>respawns in</span>
-          <span class="banner-countdown">${formatCountdown(globalNext-now)}</span>
-          <span>at</span>
-          <span class="banner-time">${globalNext.toLocaleDateString()}, ${globalNext.toLocaleTimeString()}</span>
-        `;
-      }
-    }
-
-    tick();
-    setInterval(tick,1000);
-  </script>
-</body>
-</html>
+      const b = bosses.find(x => x.id === id);
+      if (!b) return;
+      b.deathTime = null;
+      lo
