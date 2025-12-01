@@ -292,7 +292,7 @@
     </div>
   </div>
 
-  <script>
+   <script>
     // Backend endpoint: your Web App URL
     const API_URL = 'https://script.google.com/macros/s/AKfycbyMxe_s06Cwp4ZqJmDKFEjU5bjLlNZ2xC55I2BK7OZKAGRaQiWbCxqG73FyLaDxoIr6/exec';
     const API_TOKEN = null; // set if you configured TOKEN in Apps Script
@@ -311,6 +311,10 @@
     let bossesDynamic = [];
     let bossesFixed = [];
     let countdownIntervalId = null;
+    let pollIntervalId = null; // periodic re-fetch
+
+    const HEAD_OFFSET_MS = 5 * 60 * 1000;      // 5 minutes before spawn
+    const EXPIRE_OFFSET_MS = 2 * 60 * 1000;    // 2 minutes after spawn
 
     function formatCountdown(ms) {
       if (ms <= 0) return '00h 00m 00s';
@@ -406,7 +410,9 @@
       bossesRaw.forEach((b) => {
         const clone = { ...b };
         clone.nextRespawn = computeNextRespawn(clone);
-        clone.msRemaining = clone.nextRespawn ? clone.nextRespawn.getTime() - now.getTime() : null;
+        clone.msRemaining = clone.nextRespawn
+          ? clone.nextRespawn.getTime() - now.getTime()
+          : null;
 
         if (clone.respawn_type === 'dynamic') {
           bossesDynamic.push(clone);
@@ -415,18 +421,42 @@
         }
       });
 
+      sortDynamicForDisplay();
+      sortFixedForDisplay();
+    }
+
+    function sortDynamicForDisplay() {
+      const now = new Date();
+      bossesDynamic.forEach(b => {
+        b.msRemaining = b.nextRespawn ? b.nextRespawn.getTime() - now.getTime() : null;
+      });
+
       bossesDynamic.sort((a, b) => {
-        if (!a.nextRespawn && !b.nextRespawn) return 0;
-        if (!a.nextRespawn) return 1;
-        if (!b.nextRespawn) return -1;
-        return a.nextRespawn - b.nextRespawn;
+        // Treat bosses with no nextRespawn as bottom
+        const ra = (a.nextRespawn ? a.nextRespawn.getTime() - now.getTime() : Infinity);
+        const rb = (b.nextRespawn ? b.nextRespawn.getTime() - now.getTime() : Infinity);
+
+        const aExpired = ra <= -EXPIRE_OFFSET_MS;
+        const bExpired = rb <= -EXPIRE_OFFSET_MS;
+
+        // non-expired always above expired
+        if (aExpired && !bExpired) return 1;
+        if (!aExpired && bExpired) return -1;
+
+        return ra - rb;
+      });
+    }
+
+    function sortFixedForDisplay() {
+      const now = new Date();
+      bossesFixed.forEach(b => {
+        b.msRemaining = b.nextRespawn ? b.nextRespawn.getTime() - now.getTime() : null;
       });
 
       bossesFixed.sort((a, b) => {
-        if (!a.nextRespawn && !b.nextRespawn) return 0;
-        if (!a.nextRespawn) return 1;
-        if (!b.nextRespawn) return -1;
-        return a.nextRespawn - b.nextRespawn;
+        const ra = (a.nextRespawn ? a.nextRespawn.getTime() - now.getTime() : Infinity);
+        const rb = (b.nextRespawn ? b.nextRespawn.getTime() - now.getTime() : Infinity);
+        return ra - rb;
       });
     }
 
@@ -507,10 +537,13 @@
         hero.textContent = 'No upcoming respawns available.';
         return;
       }
-      all.sort((a, b) => a.nextRespawn - b.nextRespawn);
-      const next = all[0];
       const now = new Date();
-      const ms = next.nextRespawn.getTime() - now.getTime();
+      all.forEach(b => {
+        b.msRemaining = b.nextRespawn ? b.nextRespawn.getTime() - now.getTime() : null;
+      });
+      all.sort((a, b) => a.msRemaining - b.msRemaining);
+      const next = all[0];
+      const ms = next.msRemaining;
       hero.innerHTML = `
         <span class="hero-strong">${next.boss_name}</span>
         respawns in
@@ -527,14 +560,23 @@
 
       countdownIntervalId = setInterval(() => {
         const now = new Date();
+        let needsResort = false;
 
         bossesDynamic.forEach((boss) => {
+          if (!boss.nextRespawn) return;
+
           const row = document.querySelector(`tr[data-boss-name="${boss.boss_name}"]`);
-          if (!row || !boss.nextRespawn) return;
-
           const msRemaining = boss.nextRespawn.getTime() - now.getTime();
-          const headMs = msRemaining - 5 * 60 * 1000; // 5 minutes before
+          const headMs = msRemaining - HEAD_OFFSET_MS;
 
+          const previouslyExpired = boss._expired || false;
+          const nowExpired = msRemaining <= -EXPIRE_OFFSET_MS;
+          boss._expired = nowExpired;
+          if (!previouslyExpired && nowExpired) {
+            needsResort = true;
+          }
+
+          if (!row) return;
           const mainEl = row.querySelector('[data-role="countdown-main"]');
           const headEl = row.querySelector('[data-role="countdown-head"]');
 
@@ -543,13 +585,19 @@
         });
 
         bossesFixed.forEach((boss) => {
-          const row = document.querySelector(`tr[data-boss-name="${boss.boss_name}"]`);
-          if (!row || !boss.nextRespawn) return;
+          if (!boss.nextRespawn) return;
 
+          const row = document.querySelector(`tr[data-boss-name="${boss.boss_name}"]`);
+          if (!row) return;
           const msRemaining = boss.nextRespawn.getTime() - now.getTime();
           const mainEl = row.querySelector('[data-role="countdown-main"]');
           if (mainEl) mainEl.textContent = formatCountdown(msRemaining);
         });
+
+        if (needsResort) {
+          sortDynamicForDisplay();
+          renderTables();
+        }
 
         updateHero();
       }, 1000);
@@ -573,6 +621,11 @@
         enrichBosses();
         renderTables();
         startCountdownLoop();
+
+        // start polling once
+        if (!pollIntervalId) {
+          pollIntervalId = setInterval(fetchBosses, 30000); // every 30s
+        }
       } catch (err) {
         showError('Failed to load bosses: ' + err.message);
       }
