@@ -170,7 +170,6 @@
       color: #bfdbfe;
     }
 
-    /* NEW: purple Guild badge */
     .badge-guild {
       border-color: #a855f7;
       color: #e9d5ff;
@@ -240,14 +239,24 @@
       background-color: rgba(255, 0, 0, 0.25) !important;
     }
 
-    /* Cosmetic lock styling for controls */
     .controls-cell.controls-locked button {
       opacity: 0.35;
       pointer-events: none;
       cursor: not-allowed;
     }
+
+    /* MOBILE FIX — scrollable tables */
+    .table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .table-scroll table {
+      min-width: 950px;
+    }
   </style>
 </head>
+
 <body>
   <div class="page">
     <h1>EscobarPH Boss Timers</h1>
@@ -270,39 +279,43 @@
 
     <div id="error" class="error" style="display:none;"></div>
 
-    <!-- Dynamic bosses -->
+    <!-- Dynamic Bosses -->
     <div class="section-title">Dynamic Respawns (Kill-Based)</div>
     <div class="table-card" style="margin-bottom: 18px;">
-      <table>
-        <thead>
-          <tr>
-            <th>Boss Name</th>
-            <th>Respawn</th>
-            <th>Time of Death</th>
-            <th>Next Respawn</th>
-            <th>Countdown</th>
-            <th>Head to Boss Area</th>
-            <th class="center">Controls</th>
-          </tr>
-        </thead>
-        <tbody id="dynamic-body"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Boss Name</th>
+              <th>Respawn</th>
+              <th>Time of Death</th>
+              <th>Next Respawn</th>
+              <th>Countdown</th>
+              <th>Head to Boss Area</th>
+              <th class="center">Controls</th>
+            </tr>
+          </thead>
+          <tbody id="dynamic-body"></tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- Fixed bosses -->
+    <!-- Fixed Bosses -->
     <div class="section-title">Fixed Schedule Bosses</div>
     <div class="table-card">
-      <table>
-        <thead>
-          <tr>
-            <th>Boss Name</th>
-            <th>Schedule</th>
-            <th>Next Spawn</th>
-            <th>Countdown</th>
-          </tr>
-        </thead>
-        <tbody id="fixed-body"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Boss Name</th>
+              <th>Schedule</th>
+              <th>Next Spawn</th>
+              <th>Countdown</th>
+            </tr>
+          </thead>
+          <tbody id="fixed-body"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -327,8 +340,8 @@
     let pollIntervalId = null;
     let consecutiveFetchFailures = 0;
 
-    const HEAD_OFFSET_MS = 5 * 60 * 1000;   // 5 minutes early travel
-    const EXPIRE_OFFSET_MS = 2 * 60 * 1000; // 2 minutes after spawn
+    const HEAD_OFFSET_MS = 5 * 60 * 1000;
+    const EXPIRE_OFFSET_MS = 2 * 60 * 1000;
 
     function formatCountdown(ms) {
       if (ms <= 0) return "00h 00m 00s";
@@ -354,25 +367,20 @@
 
     function normalizeTimeValue(val) {
       if (!val) return null;
-      if (typeof val === "string" && /^\d{1,2}:\d{2}$/.test(val.trim())) {
-        return val.trim();
-      }
+      if (typeof val === "string" && /^\d{1,2}:\d{2}$/.test(val.trim())) return val.trim();
       const d = val instanceof Date ? val : new Date(val);
       if (!isNaN(d.getTime())) {
         const pad = (n) => String(n).padStart(2, "0");
         return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
       }
-      if (typeof val === "string") return val;
       return null;
     }
 
     function formatSchedule(boss) {
       const t1 = normalizeTimeValue(boss.fixed_time_1_24h);
       const t2 = normalizeTimeValue(boss.fixed_time_2_24h);
-
       const p1 = boss.fixed_day_1 && t1 ? `${boss.fixed_day_1} ${t1}` : "";
       const p2 = boss.fixed_day_2 && t2 ? `${boss.fixed_day_2} ${t2}` : "";
-
       if (p1 && p2) return `${p1}, ${p2}`;
       return p1 || p2 || "—";
     }
@@ -380,17 +388,13 @@
     function nextWeeklyOccurrence(dayName, time24, fromDate) {
       if (!dayName || !time24) return null;
       const [h, m] = time24.split(":").map(Number);
-      if (isNaN(h) || isNaN(m)) return null;
-
       const dow = WEEKDAY_INDEX[dayName];
       const cur = fromDate.getDay();
       let delta = (dow - cur + 7) % 7;
-
       const dt = new Date(fromDate.getTime());
       dt.setSeconds(0, 0);
       dt.setDate(dt.getDate() + delta);
       dt.setHours(h, m, 0, 0);
-
       if (dt <= fromDate) dt.setDate(dt.getDate() + 7);
       return dt;
     }
@@ -401,19 +405,16 @@
       if (boss.respawn_type === "dynamic") {
         if (!boss.last_death_iso || !boss.respawn_hours) return null;
         const d = new Date(boss.last_death_iso);
-        if (isNaN(d.getTime())) return null;
         return new Date(d.getTime() + Number(boss.respawn_hours) * 3600 * 1000);
       }
 
       if (boss.respawn_type === "fixed") {
-        const t1 = normalizeTimeValue(boss.fixed_time_1_24h);
-        const t2 = normalizeTimeValue(boss.fixed_time_2_24h);
-        const candidates = [];
-        if (boss.fixed_day_1 && t1) candidates.push(nextWeeklyOccurrence(boss.fixed_day_1, t1, now));
-        if (boss.fixed_day_2 && t2) candidates.push(nextWeeklyOccurrence(boss.fixed_day_2, t2, now));
-        const good = candidates.filter(Boolean);
-        if (!good.length) return null;
-        return good.reduce((a, b) => (a < b ? a : b));
+        const times = [];
+        if (boss.fixed_day_1 && boss.fixed_time_1_24h)
+          times.push(nextWeeklyOccurrence(boss.fixed_day_1, boss.fixed_time_1_24h, now));
+        if (boss.fixed_day_2 && boss.fixed_time_2_24h)
+          times.push(nextWeeklyOccurrence(boss.fixed_day_2, boss.fixed_time_2_24h, now));
+        return times.filter(Boolean).sort((a, b) => a - b)[0] || null;
       }
 
       return null;
@@ -425,17 +426,12 @@
 
       bossesRaw.forEach((b) => {
         const clone = { ...b };
-        // normalize respawn_type to avoid spacing/case issues
-        const type = (clone.respawn_type || "").toString().trim().toLowerCase();
+        const type = (clone.respawn_type || "").trim().toLowerCase();
         clone.respawn_type = type;
-
         clone.nextRespawn = computeNextRespawn(clone);
 
-        if (type === "dynamic") {
-          bossesDynamic.push(clone);
-        } else if (type === "fixed") {
-          bossesFixed.push(clone);
-        }
+        if (type === "dynamic") bossesDynamic.push(clone);
+        else if (type === "fixed") bossesFixed.push(clone);
       });
     }
 
@@ -470,19 +466,14 @@
       const dynSorted = sortDynamicListForDisplay(bossesDynamic);
       const fixSorted = sortFixedListForDisplay(bossesFixed);
 
-      // dynamic bosses
       dynSorted.forEach((boss) => {
         const tr = document.createElement("tr");
         tr.dataset.bossName = boss.boss_name;
         tr.innerHTML = `
           <td class="td-name">${boss.boss_name}</td>
           <td><span class="badge-respawn badge-dynamic">${boss.respawn_hours}h</span></td>
-          <td class="td-muted nowrap">
-            ${boss.last_death_iso ? formatDateTime(new Date(boss.last_death_iso)) : "—"}
-          </td>
-          <td class="td-muted nowrap">
-            ${boss.nextRespawn ? formatDateTime(boss.nextRespawn) : "—"}
-          </td>
+          <td class="td-muted nowrap">${boss.last_death_iso ? formatDateTime(new Date(boss.last_death_iso)) : "—"}</td>
+          <td class="td-muted nowrap">${boss.nextRespawn ? formatDateTime(boss.nextRespawn) : "—"}</td>
           <td><span class="countdown" data-role="countdown-main">--h --m --s</span></td>
           <td><span class="countdown countdown-soft" data-role="countdown-head">--h --m --s</span></td>
           <td class="center controls-cell">
@@ -495,11 +486,8 @@
         dynBody.appendChild(tr);
       });
 
-      // fixed + guild bosses
       fixSorted.forEach((boss) => {
         const tr = document.createElement("tr");
-        tr.dataset.bossName = boss.boss_name;
-
         const notes = (boss.notes || "").trim().toLowerCase();
         const isGuild = notes.includes("guild");
         const badgeClass = isGuild ? "badge-guild" : "badge-fixed";
@@ -511,9 +499,7 @@
             <span class="badge-respawn ${badgeClass}" style="margin-left:6px;">${badgeLabel}</span>
           </td>
           <td class="td-muted nowrap">${formatSchedule(boss)}</td>
-          <td class="td-muted nowrap">
-            ${boss.nextRespawn ? formatDateTime(boss.nextRespawn) : "—"}
-          </td>
+          <td class="td-muted nowrap">${boss.nextRespawn ? formatDateTime(boss.nextRespawn) : "—"}</td>
           <td><span class="countdown" data-role="countdown-main">--h --m --s</span></td>
         `;
         fixBody.appendChild(tr);
@@ -528,15 +514,18 @@
       const now = new Date();
       const candidates = bossesDynamic.concat(bossesFixed).filter((b) => b.nextRespawn);
       let best = null;
+
       candidates.forEach((b) => {
         const ms = b.nextRespawn - now;
         if (ms <= 0) return;
         if (!best || ms < best.ms) best = { boss: b, ms };
       });
+
       if (!best) {
         hero.textContent = "No upcoming respawns available.";
         return;
       }
+
       hero.innerHTML = `
         <span class="hero-strong">${best.boss.boss_name}</span>
         respawns in
@@ -548,6 +537,7 @@
 
     function startCountdownLoop() {
       if (countdownIntervalId) clearInterval(countdownIntervalId);
+
       countdownIntervalId = setInterval(() => {
         const now = new Date();
 
@@ -557,12 +547,16 @@
           const ms = boss.nextRespawn - now;
           const headMs = ms - HEAD_OFFSET_MS;
           if (!row) return;
+
           const mainEl = row.querySelector('[data-role="countdown-main"]');
           const headEl = row.querySelector('[data-role="countdown-head"]');
+
           row.classList.remove("highlight-10m", "highlight-5m");
           const headMinutes = headMs / 60000;
+
           if (headMinutes < 5) row.classList.add("highlight-5m");
           else if (headMinutes < 10) row.classList.add("highlight-10m");
+
           if (mainEl) mainEl.textContent = formatCountdown(ms);
           if (headEl) headEl.textContent = formatCountdown(headMs);
         });
@@ -571,8 +565,10 @@
           if (!boss.nextRespawn) return;
           const row = document.querySelector(`tr[data-boss-name="${boss.boss_name}"]`);
           if (!row) return;
+
           const ms = boss.nextRespawn - now;
           const mainEl = row.querySelector('[data-role="countdown-main"]');
+
           if (mainEl) mainEl.textContent = formatCountdown(ms);
         });
 
@@ -591,14 +587,18 @@
         const res = await fetch(API_URL);
         const data = await res.json();
         if (!data.ok) throw new Error(data.error || "Unknown error");
+
         bossesRaw = data.bosses || [];
         enrichBosses();
         renderTables();
         startCountdownLoop();
         updateHero();
+
         consecutiveFetchFailures = 0;
         showError("");
+
         if (!pollIntervalId) pollIntervalId = setInterval(fetchBosses, 10000);
+
       } catch (err) {
         consecutiveFetchFailures++;
         if (consecutiveFetchFailures >= 2) {
@@ -610,17 +610,22 @@
     async function sendAction(bossName, action) {
       if (!bossName) return;
       if (!window.controlsUnlocked) return;
+
       showError("");
+
       try {
         const payload = { action, boss_name: bossName };
         if (action === "update") payload.last_death_iso = new Date().toISOString();
         else if (action === "clear") payload.last_death_iso = "";
+
         const res = await fetch(API_URL, {
           method: "POST",
           body: JSON.stringify(payload),
         });
+
         const data = await res.json();
         if (!data.ok) throw new Error(data.error || "Unknown error");
+
         await fetchBosses();
       } catch (err) {
         showError("Failed to update boss: " + err.message);
@@ -638,8 +643,7 @@
       });
     }
 
-    /* -------- Cosmetic password + lockout -------- */
-
+    /* PASSWORD + LOCKOUT */
     const ACCESS_PASSWORD = "Pablo";
     const LS_KEY_UNLOCKED = "bossControlsUnlocked";
     const LS_KEY_ATTEMPTS = "bossControlsAttempts";
@@ -654,6 +658,7 @@
 
       const now = Date.now();
       const lockUntil = Number(localStorage.getItem(LS_KEY_LOCKUNTIL) || 0);
+
       const lockedOut = now < lockUntil;
 
       const controlCells = document.querySelectorAll(".controls-cell");
@@ -696,7 +701,7 @@
 
       function tryToggle() {
         const now = Date.now();
-        let lockUntil = Number(localStorage.getItem(LS_KEY_LOCKUNTIL) || 0);
+        const lockUntil = Number(localStorage.getItem(LS_KEY_LOCKUNTIL) || 0);
 
         if (now < lockUntil) {
           updateAuthUI();
@@ -723,19 +728,18 @@
           return;
         }
 
-        let attempts = Number(localStorage.getItem(LS_KEY_ATTEMPTS) || 0);
-        attempts += 1;
-        localStorage.setItem(LS_KEY_ATTEMPTS, String(attempts));
+        let attempts = Number(localStorage.getItem(LS_KEY_ATTEMPTS) || 0) + 1;
+        localStorage.setItem(LS_KEY_ATTEMPTS, attempts.toString());
 
         const lockSeconds = attempts * 10;
-        const newLockUntil = now + lockSeconds * 1000;
-        localStorage.setItem(LS_KEY_LOCKUNTIL, String(newLockUntil));
+        localStorage.setItem(LS_KEY_LOCKUNTIL, (now + lockSeconds * 1000).toString());
 
         inputEl.value = "";
         updateAuthUI();
       }
 
       buttonEl.addEventListener("click", tryToggle);
+
       inputEl.addEventListener("keyup", (e) => {
         if (e.key === "Enter") tryToggle();
       });
